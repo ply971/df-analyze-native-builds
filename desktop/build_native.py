@@ -22,7 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 APP = "df-analyze-desktop"
 MAC_APP = "df-analyze Desktop.app"
-PYTHON_VERSION = "3.13.15"
+PYTHON_VERSION = "3.13.11"
 
 
 def run(args: list[str | Path], *, cwd: Path = ROOT, env=None, timeout=3600) -> None:

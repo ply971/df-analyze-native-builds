@@ -77,7 +77,7 @@ analysis. It needs a graphical session (or Xvfb on Linux).
 ### Native Linux and macOS installers
 
 `build_native.py` builds on the target operating system. It creates an isolated
-Python 3.13.15 environment, uses the versions in `uv.lock`, freezes the app,
+Python 3.13.11 environment, uses the versions in `uv.lock`, freezes the app,
 copies it outside the checkout into a path containing spaces, and runs its
 chart-and-analysis self-test. It creates installers only if that test succeeds.
 Outputs go into `dist/installer/native/`, with SHA-256 checksum files.
@@ -95,14 +95,14 @@ On Ubuntu, install uv and the build/graphics tools, then run:
 ```bash
 sudo apt-get update
 sudo apt-get install -y binutils xz-utils xvfb xauth libgl1 libgl1-mesa-dri libx11-6 libxext6 libxrandr2 libxinerama1 libxcursor1 libxi6 libgomp1
-uv run --no-project --python 3.13.15 python desktop/build_native.py
+uv run --no-project --python 3.13.11 python desktop/build_native.py
 ```
 
 On an Apple Silicon Mac with uv and Apple's command-line developer tools:
 
 ```bash
 brew install libomp
-uv run --no-project --python 3.13.15 python desktop/build_native.py
+uv run --no-project --python 3.13.11 python desktop/build_native.py
 ```
 
 The GitHub Actions workflow `.github/workflows/native-installers.yml` runs these

@@ -35,7 +35,7 @@ jobs:
           version: "0.11.24"
           enable-cache: false
       - name: Install Python
-        run: uv python install 3.13.15
+        run: uv python install 3.13.11
       - name: Install Linux build and graphics libraries
         if: runner.os == 'Linux'
         run: |
@@ -48,7 +48,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          uv run --no-project --python 3.13.15 python desktop/build_native.py 2>&1 | tee native-build.log
+          uv run --no-project --python 3.13.11 python desktop/build_native.py 2>&1 | tee native-build.log
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
