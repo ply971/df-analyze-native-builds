@@ -44,6 +44,10 @@ RISKY_COLLECT_ALL = [
     "pytorch_tabular",
     "optuna",
     "dearpygui",
+    "ipykernel",
+    "jupyter_client",
+    "IPython",
+    "matplotlib_inline",
 ]
 RISKY_COPY_METADATA = [
     *RISKY_COLLECT_ALL,
@@ -72,7 +76,7 @@ for pkg in RISKY_COPY_METADATA:
         pass  # not every entry above resolves as an installed distribution name
 
 a = Analysis(
-    [str(ROOT / "desktop" / "app.py")],
+    [str(ROOT / "desktop" / "entry.py")],
     pathex=[str(ROOT), str(ROOT / "src")],
     binaries=binaries,
     datas=datas,
@@ -91,7 +95,7 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    [],
+    [("u", None, "OPTION")],
     exclude_binaries=True,
     name="df-analyze-desktop",
     debug=False,

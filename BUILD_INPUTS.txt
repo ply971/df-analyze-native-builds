@@ -11,10 +11,13 @@ desktop/build.spec
 desktop/build_native.py
 desktop/dpg_context.py
 desktop/embedding_panel.py
+desktop/entry.py
 desktop/frozen_runtime.py
+desktop/installer.iss
 desktop/log_stream.py
 desktop/notebook_panel.py
 desktop/runner.py
+desktop/smoke_checks.py
 desktop/workflow_canvas.py
 df-analyze.py
 df-embed.py

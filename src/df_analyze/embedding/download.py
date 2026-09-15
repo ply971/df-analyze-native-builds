@@ -23,7 +23,14 @@ from transformers.models.xlm_roberta.tokenization_xlm_roberta_fast import (
 
 from df_analyze.embedding.cli import EmbeddingModality, EmbeddingOptions
 
-INTFLOAT_MULTILINGUAL_MODEL = ROOT / "downloaded_models/intfloat_multi_large/model"
+if getattr(sys, "frozen", False):
+    from df_analyze._setup import CACHE_DIR
+
+    MODELS_DIR = CACHE_DIR / "downloaded_models"
+else:
+    MODELS_DIR = ROOT / "downloaded_models"
+
+INTFLOAT_MULTILINGUAL_MODEL = MODELS_DIR / "intfloat_multi_large/model"
 INTFLOAT_MULTILINGUAL_MODEL.mkdir(exist_ok=True, parents=True)
 INTFLOAT_MODEL_FILES = [
     INTFLOAT_MULTILINGUAL_MODEL / "config.json",
@@ -32,7 +39,7 @@ INTFLOAT_MODEL_FILES = [
 
 
 INTFLOAT_MULTILINGUAL_TOKENIZER = (
-    ROOT / "downloaded_models/intfloat_multi_large/tokenizer"
+    MODELS_DIR / "intfloat_multi_large/tokenizer"
 )
 INTFLOAT_MULTILINGUAL_TOKENIZER.mkdir(exist_ok=True, parents=True)
 INTFLOAT_TOKENIZER_FILES = [
@@ -41,13 +48,13 @@ INTFLOAT_TOKENIZER_FILES = [
     INTFLOAT_MULTILINGUAL_TOKENIZER / "tokenizer.json",
 ]
 
-SIGLIP_MODEL = ROOT / "downloaded_models/siglip_so400m_patch14_384/model"
+SIGLIP_MODEL = MODELS_DIR / "siglip_so400m_patch14_384/model"
 SIGLIP_MODEL_FILES = [
     SIGLIP_MODEL / "config.json",
     SIGLIP_MODEL / "model.safetensors",
 ]
 
-SIGLIP_PREPROCESSOR = ROOT / "downloaded_models/siglip_so400m_patch14_384/preprocessor"
+SIGLIP_PREPROCESSOR = MODELS_DIR / "siglip_so400m_patch14_384/preprocessor"
 SIGLIP_PREPROCESSOR_FILES = [
     SIGLIP_PREPROCESSOR / "preprocessor_config.json",
     SIGLIP_PREPROCESSOR / "special_tokens_map.json",

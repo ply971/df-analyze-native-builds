@@ -11,7 +11,6 @@ import copy
 import json
 import os
 import queue
-import shutil
 import subprocess
 import sys
 import threading
@@ -156,9 +155,8 @@ class NotebookSession:
     def __init__(self, root: Path, cfg: gc.RunConfig | None = None, python: str | None = None):
         self.root = Path(root).resolve()
         self.python = python or sys.executable
-        if python is None and getattr(sys, "frozen", False):
-            candidate = self.root / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
-            self.python = str(candidate) if candidate.is_file() else shutil.which("python")
+        self._bundled_kernel = python is None and getattr(sys, "frozen", False)
+        self.working_dir = Path.home() / "df-analyze-notebooks" if self._bundled_kernel else self.root
         self.cells = starter(cfg)
         self.metadata = {"kernelspec": {"name": "python3", "display_name": "Python (df-analyze)", "language": "python"}}
         self._deleted = []
@@ -272,17 +270,28 @@ class NotebookSession:
         if self.manager is not None:
             return
         from jupyter_client.manager import KernelManager
+        from jupyter_client.kernelspec import KernelSpec, KernelSpecManager
 
         if not self.python:
             raise ValueError("A Python environment with ipykernel and df-analyze is required.")
-        manager = KernelManager(kernel_name="python3")
-        manager.kernel_spec.argv = [self.python, "-m", "ipykernel_launcher", "-f", "{connection_file}"]
+        command = [self.python]
+        command += ["--notebook-kernel"] if self._bundled_kernel else ["-m", "ipykernel_launcher"]
+        command += ["-f", "{connection_file}"]
+
+        class AppKernelSpecManager(KernelSpecManager):
+            def get_kernel_spec(self, kernel_name):
+                # Do not depend on a python3 kernelspec installed on the user's
+                # computer. The app explicitly owns its kernel command.
+                return KernelSpec(argv=command, display_name="Python (df-analyze)", language="python")
+
+        manager = KernelManager(kernel_name="df-analyze", kernel_spec_manager=AppKernelSpecManager())
         env = os.environ.copy()
         env["PYTHONPATH"] = os.pathsep.join([str(self.root), str(self.root / "src"), env.get("PYTHONPATH", "")])
         kwargs = {"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt" else {}
         self.manager = manager
         try:
-            manager.start_kernel(cwd=str(self.root), env=env, **kwargs)
+            self.working_dir.mkdir(parents=True, exist_ok=True)
+            manager.start_kernel(cwd=str(self.working_dir), env=env, **kwargs)
             self.client = manager.blocking_client()
             self.client.start_channels()
             self.client.wait_for_ready(timeout=45)

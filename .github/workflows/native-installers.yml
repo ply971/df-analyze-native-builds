@@ -1,4 +1,4 @@
-name: Build Linux and macOS installers
+name: Build and verify desktop installers
 
 on:
   workflow_dispatch:
@@ -20,6 +20,8 @@ jobs:
             target: linux-x86_64
           - os: macos-14
             target: macos-arm64
+          - os: windows-2022
+            target: windows-x86_64
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     env:
@@ -44,6 +46,13 @@ jobs:
       - name: Install macOS OpenMP runtime
         if: runner.os == 'macOS'
         run: brew list libomp || brew install libomp
+      - name: Install Windows installer compiler
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (!(Test-Path 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe')) {
+            choco install innosetup --no-progress -y
+          }
       - name: Build, relocate, test and package
         shell: bash
         run: |

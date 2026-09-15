@@ -2490,6 +2490,10 @@ def run_self_test(data_path: Path, target: str, outdir: Path) -> int:
         return 1
     print("[self-test] Chart rendering OK")
 
+    from desktop.smoke_checks import check_data_and_models
+
+    check_data_and_models(outdir / "library-checks")
+
     print("[self-test] Running a real analysis...")
     cfg = gc.RunConfig(data_path=data_path, target=target, mode="classify",
                         models=["dummy"], feat_select=["none"], htune_trials=3, outdir=outdir,
@@ -2512,11 +2516,41 @@ def run_self_test(data_path: Path, target: str, outdir: Path) -> int:
     if results_dir is None:
         print(f"[self-test] FAILED: no completed results under {outdir}")
         return 1
+    print("[self-test] Executing notebook cells with the app's Python...")
+    from df_analyze.gui_notebook import NotebookSession, cell
+
+    session = NotebookSession(ROOT)
+    session.working_dir = outdir / "notebook"
+    session.cells = [
+        cell("import numpy as np\nimport pandas as pd\nanswer = int(np.arange(5).sum()) + 30\npd.DataFrame({'value': [answer]})"),
+        cell("answer + 2"),
+        cell("%matplotlib inline\nimport matplotlib.pyplot as plt\nplt.plot([1, 2, 3]); plt.show()"),
+    ]
+    try:
+        session.execute()
+        session.thread.join(timeout=120)
+        if session.busy or session.status != "Execution complete.":
+            print(f"[self-test] FAILED: {session.status}")
+            return 1
+        outputs = [o for c in session.cells for o in c.get("outputs", [])]
+        if any(o.get("output_type") == "error" for o in outputs):
+            print(f"[self-test] FAILED: notebook errors: {outputs}")
+            return 1
+        if not any(o.get("data", {}).get("text/plain") == "42" for o in outputs):
+            print("[self-test] FAILED: notebook did not preserve its variables")
+            return 1
+        if not any("image/png" in o.get("data", {}) for o in outputs):
+            print("[self-test] FAILED: notebook did not render its plot")
+            return 1
+        (outdir / "notebook-self-test.ipynb").write_text(session.to_ipynb(), encoding="utf-8")
+    finally:
+        session.close()
+    print("[self-test] Notebook execution, plotting and export OK")
     print(f"[self-test] PASSED: {results_dir}")
     return 0
 
 
-if __name__ == "__main__":
+def main() -> None:
     multiprocessing.freeze_support()
     if "--self-test" in sys.argv:
         parser = argparse.ArgumentParser()
@@ -2527,3 +2561,7 @@ if __name__ == "__main__":
         args = parser.parse_args()
         sys.exit(run_self_test(args.data, args.target, args.outdir))
     run_gui()
+
+
+if __name__ == "__main__":
+    main()

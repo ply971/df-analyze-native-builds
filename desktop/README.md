@@ -74,7 +74,7 @@ dist\df-analyze-desktop\df-analyze-desktop.exe --self-test --data data\small_cla
 The self-test briefly opens a real viewport, renders the charts, and runs an
 analysis. It needs a graphical session (or Xvfb on Linux).
 
-### Native Linux and macOS installers
+### Native Windows, Linux and macOS installers
 
 `build_native.py` builds on the target operating system. It creates an isolated
 Python 3.13.11 environment, uses the versions in `uv.lock`, freezes the app,
@@ -84,6 +84,7 @@ Outputs go into `dist/installer/native/`, with SHA-256 checksum files.
 
 | Build host | Output | Target |
 | --- | --- | --- |
+| Windows x86-64 | `.exe` setup | Windows 10/11 x86-64 |
 | Ubuntu 22.04 x86-64 | `.deb` and portable `.tar.gz` | Ubuntu 22.04 or newer; other glibc distributions require testing |
 | macOS 14 Apple Silicon | `.dmg` containing an `.app` | macOS 14 or newer on M-series Macs |
 
@@ -106,8 +107,8 @@ uv run --no-project --python 3.13.11 python desktop/build_native.py
 ```
 
 The GitHub Actions workflow `.github/workflows/native-installers.yml` runs these
-same builds on Ubuntu and macOS. Run **Build Linux and macOS installers** from
-Actions, or push the `packaging/native-installers` branch. Download the two
+same builds on Windows, Ubuntu and macOS. Run **Build and verify desktop installers** from
+Actions, or push the `packaging/native-installers` branch. Download the three
 installer artifacts from the successful workflow. It does not publish releases.
 
 Install the Linux `.deb` with `sudo apt install ./df-analyze-desktop-4.1.0-linux-amd64.deb`.
@@ -124,10 +125,15 @@ Apple notarization remains a separate distribution step.
 The desktop build includes the analysis and embedding libraries. Linux uses
 CPU PyTorch to avoid requiring CUDA. TensorFlow and the separate Streamlit web UI
 are excluded because the desktop does not use them. Embedding model weights
-are downloaded when needed. As with the existing frozen Windows application,
-notebook execution requires a separate Python environment with ipykernel and
-the project's dependencies; the frozen analysis executable is not a notebook
-Python interpreter.
+are downloaded when needed. Notebook cells use a bundled Jupyter kernel, so
+users do not need to install Python. Analysis and embedding workers also run
+in separate bundled processes and can be cancelled from the app.
 
 Frozen apps keep their analysis cache and GANDALF logs in user storage so they
 can run from `/opt` or `/Applications` without modifying their installation.
+
+The packaged self-test verifies CSV/Parquet/XLSX/JSON round trips, chart rendering,
+real analysis results, native model calculations, and notebook execution, variable
+persistence, plotting and export. It runs after relocating the bundle outside
+the source checkout. These checks cover the listed build targets, not every
+possible OS version or graphics driver.

@@ -1,8 +1,4 @@
-"""Run analysis off the render thread, with cancellation in source checkouts.
-
-Frozen builds retain an in-process fallback because their executable is the
-GUI itself, rather than a Python interpreter.
-"""
+"""Run analysis in a cancellable process in source and packaged applications."""
 
 from __future__ import annotations
 
@@ -115,14 +111,14 @@ def start_run(
     """Return progress queues consumed by the GUI's render loop.
 
     ``main_fn`` is an injectable in-process entry point for tests. Real source
-    runs use a subprocess; frozen runs import the pipeline inside the worker,
-    including its slow optional model dependencies.
+    runs use a subprocess; packaged runs dispatch the same executable in worker
+    mode so they also support cancellation without changing GUI process globals.
     """
     log_q: "queue.Queue[str]" = queue.Queue()
     done_q: "queue.Queue[DoneResult]" = queue.Queue()
     argv = ["df-analyze.py", *gc.build_argv(cfg)]
     state = None
-    if main_fn is None and not getattr(sys, "frozen", False):
+    if main_fn is None:
         state = _ProcessState()
         thread = threading.Thread(
             target=_run_process,
@@ -163,8 +159,13 @@ def _run_process(
         env.setdefault("OPENBLAS_NUM_THREADS", "1")
         env.setdefault("MKL_NUM_THREADS", "1")
         log_q.put("Starting analysis engine. The first import can take a moment...\n")
+        if getattr(sys, "frozen", False):
+            mode = "--embedding-worker" if script.name == "df-embed.py" else "--analysis-worker"
+            command = [sys.executable, mode, *args]
+        else:
+            command = [sys.executable, "-u", str(script), *args]
         process = subprocess.Popen(
-            [sys.executable, "-u", str(script), *args],
+            command,
             cwd=script.parent,
             env=env,
             stdin=subprocess.DEVNULL,
@@ -212,18 +213,9 @@ def start_embedding(cfg) -> RunHandle:
     args = cfg.argv()
     log_q = queue.Queue()
     done_q = queue.Queue()
-    state = None
-    if getattr(sys, "frozen", False):
-        def main():
-            import torch  # noqa: F401
-            from df_analyze.embedding.main import main as embed_main
-
-            embed_main()
-        thread = threading.Thread(target=_run_worker, args=(["df-embed.py", *args], main, log_q, done_q), daemon=True)
-    else:
-        state = _ProcessState()
-        thread = threading.Thread(target=_run_process,
-                                  args=(args, log_q, done_q, state, ANALYZE_SCRIPT.with_name("df-embed.py")), daemon=True)
+    state = _ProcessState()
+    thread = threading.Thread(target=_run_process,
+                              args=(args, log_q, done_q, state, ANALYZE_SCRIPT.with_name("df-embed.py")), daemon=True)
     handle = RunHandle(thread, log_q, done_q, state)
     thread.start()
     return handle

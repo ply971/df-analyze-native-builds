@@ -1,4 +1,4 @@
-"""Build and smoke-test native Linux and Apple Silicon desktop installers.
+"""Build and smoke-test native Windows, Linux and Apple Silicon installers.
 
 Run with Python 3.13 on the target OS; uv must be on PATH. The build environment
 is separate from the developer's .venv and the Windows distribution.
@@ -36,9 +36,11 @@ def native_target() -> str:
         return "linux-x86_64"
     if sys.platform == "darwin" and machine == "arm64":
         return "macos-arm64"
+    if sys.platform == "win32" and machine in {"amd64", "x86_64"}:
+        return "windows-x86_64"
     raise SystemExit(
-        "Build on Linux x86-64 or an Apple Silicon Mac. "
-        "Windows cannot cross-compile these installers; Intel Macs are not supported "
+        "Build each installer on its target OS (Windows/Linux x86-64 or Apple Silicon). "
+        "Intel Macs are not supported "
         "by the project's current Dear PyGui and PyTorch versions."
     )
 
@@ -71,7 +73,7 @@ def write_requirements(directory: Path) -> tuple[Path, Path]:
 def prepare_environment(target: str, work: Path) -> Path:
     requirements, constraints = write_requirements(work)
     venv = work / "venv"
-    python = venv / "bin" / "python"
+    python = venv / ("Scripts/python.exe" if target.startswith("windows") else "bin/python")
     if not python.exists():
         run(["uv", "venv", "--python", PYTHON_VERSION, venv])
     args = [
@@ -80,7 +82,7 @@ def prepare_environment(target: str, work: Path) -> Path:
         "scikit-learn,pandas,pyarrow,llvmlite,numba,catboost,lightgbm",
         "-r", str(requirements), "-c", str(constraints),
     ]
-    if target.startswith("linux"):
+    if target.startswith(("linux", "windows")):
         # CUDA is not required for desktop analysis. This also avoids downloading
         # several GB of NVIDIA runtimes on the Linux build machine.
         args += ["--torch-backend", "cpu"]
@@ -100,7 +102,7 @@ def smoke_test(bundle: Path, target: str) -> None:
             executable = installed / "Contents" / "MacOS" / APP
         else:
             shutil.copytree(bundle, installed, symlinks=True)
-            executable = installed / APP
+            executable = installed / (APP + (".exe" if target.startswith("windows") else ""))
         sample = staging / "sample.json"
         shutil.copy2(ROOT / "data" / "small_classifier_data.json", sample)
         env = os.environ.copy()
@@ -124,6 +126,7 @@ def build_deb(bundle: Path, output: Path, version: str) -> Path:
     artifact = output / f"{APP}-{version}-linux-amd64.deb"
     with tempfile.TemporaryDirectory(prefix="df-analyze-deb-") as temporary:
         staging = Path(temporary)
+        staging.chmod(0o755)
         shutil.copytree(bundle, staging / "opt" / APP, symlinks=True)
         applications = staging / "usr" / "share" / "applications"
         applications.mkdir(parents=True)
@@ -174,6 +177,26 @@ def build_dmg(bundle: Path, output: Path, version: str) -> Path:
     return artifact
 
 
+def find_iscc() -> str:
+    installed = shutil.which("ISCC")
+    if installed:
+        return installed
+    for variable in ("ProgramFiles(x86)", "ProgramFiles"):
+        directory = os.environ.get(variable)
+        if directory:
+            candidate = Path(directory) / "Inno Setup 6" / "ISCC.exe"
+            if candidate.is_file():
+                return str(candidate)
+    raise SystemExit("Install Inno Setup 6 before building the Windows installer.")
+
+
+def build_windows_setup(bundle: Path, output: Path, version: str) -> Path:
+    name = f"{APP}-{version}-windows-x86_64-setup"
+    run([find_iscc(), f"/O{output}", f"/F{name}", f"/DMyAppSourceDir={bundle}",
+         ROOT / "desktop" / "installer.iss"])
+    return output / f"{name}.exe"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--requirements-only", type=Path,
@@ -185,9 +208,13 @@ def main() -> None:
         write_requirements(args.requirements_only.resolve())
         return
     target = native_target()
-    required_tools = ["uv", "dpkg-deb", "xvfb-run"] if target.startswith("linux") else [
-        "uv", "ditto", "codesign", "hdiutil",
-    ]
+    required_tools = ["uv"]
+    if target.startswith("linux"):
+        required_tools += ["dpkg-deb", "xvfb-run"]
+    elif target.startswith("macos"):
+        required_tools += ["ditto", "codesign", "hdiutil"]
+    else:
+        find_iscc()
     missing = [tool for tool in required_tools if not shutil.which(tool)]
     if missing:
         raise SystemExit("Install required build tools first: " + ", ".join(missing))
@@ -207,6 +234,8 @@ def main() -> None:
     output.mkdir(parents=True, exist_ok=True)
     if target.startswith("macos"):
         artifacts = [build_dmg(bundle, output, version)]
+    elif target.startswith("windows"):
+        artifacts = [build_windows_setup(bundle, output, version)]
     else:
         artifacts = [build_deb(bundle, output, version)]
         portable = output / f"{APP}-{version}-linux-x86_64.tar.gz"
