@@ -1,0 +1,69 @@
+name: Build Linux and macOS installers
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - packaging/native-installers
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: linux-x86_64
+          - os: macos-14
+            target: macos-arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    env:
+      PYTHONUNBUFFERED: "1"
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      LIBGL_ALWAYS_SOFTWARE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.24"
+          enable-cache: false
+      - name: Install Python
+        run: uv python install 3.13.15
+      - name: Install Linux build and graphics libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y binutils xz-utils xvfb xauth libgl1 libgl1-mesa-dri libx11-6 libxext6 libxrandr2 libxinerama1 libxcursor1 libxi6 libgomp1
+      - name: Install macOS OpenMP runtime
+        if: runner.os == 'macOS'
+        run: brew list libomp || brew install libomp
+      - name: Build, relocate, test and package
+        shell: bash
+        run: |
+          set -o pipefail
+          uv run --no-project --python 3.13.15 python desktop/build_native.py 2>&1 | tee native-build.log
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: df-analyze-${{ matrix.target }}
+          path: dist/installer/native/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics-${{ matrix.target }}
+          path: |
+            native-build.log
+            build/native/${{ matrix.target }}/pyinstaller/build/warn-build.txt
+          if-no-files-found: ignore
+          retention-days: 14
