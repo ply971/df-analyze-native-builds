@@ -5,17 +5,20 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-for directory in (ROOT, ROOT / "src"):
-    if str(directory) not in sys.path:
-        sys.path.insert(0, str(directory))
+if not getattr(sys, "frozen", False):
+    for directory in (ROOT, ROOT / "src"):
+        if str(directory) not in sys.path:
+            sys.path.insert(0, str(directory))
 
 
 def main() -> None:
     multiprocessing.freeze_support()
+    # Resolve our package through the frozen loader before GUI libraries or
+    # notebook plugins add their own import paths.
+    import df_analyze
+
     mode = sys.argv[1] if len(sys.argv) > 1 else ""
     if mode == "--self-test":
-        import df_analyze
-
         print("[self-test] Package file:", df_analyze.__file__, flush=True)
         print("[self-test] Package paths:", list(df_analyze.__path__), flush=True)
         for directory in df_analyze.__path__:

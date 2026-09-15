@@ -3,7 +3,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 SRC = ROOT / "src"
-sys.path.append(str(SRC))
+if not getattr(sys, "frozen", False):
+    sys.path.append(str(SRC))
 
 
 # from df_analyze._main import main

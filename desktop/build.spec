@@ -21,7 +21,7 @@ import sys
 import tomllib
 from pathlib import Path
 
-from PyInstaller.utils.hooks import collect_all, copy_metadata
+from PyInstaller.utils.hooks import collect_all, collect_data_files, copy_metadata
 
 ROOT = Path(SPECPATH).resolve().parent
 VERSION = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
@@ -58,6 +58,7 @@ RISKY_COPY_METADATA = [
     "packaging",
     "numpy",
     "pyyaml",
+    "debugpy",
 ]
 
 datas = []
@@ -79,6 +80,12 @@ for pkg in RISKY_COLLECT_ALL:
     datas += d
     binaries += b
     hiddenimports += h
+
+# ipykernel imports debugpy, whose vendored debugger discovers its modules by
+# walking real directories. Archive-only imports do not provide that tree.
+# Its optional platform attach helpers are unnecessary for notebook execution.
+datas += collect_data_files("debugpy", include_py_files=True)
+hiddenimports += ["debugpy.server.api", "debugpy._vendored.force_pydevd"]
 
 for pkg in RISKY_COPY_METADATA:
     try:

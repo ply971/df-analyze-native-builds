@@ -16,9 +16,10 @@ from typing import Any, Callable, Iterator
 from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parent.parent
-for import_root in (ROOT, ROOT / "src"):
-    if str(import_root) not in sys.path:
-        sys.path.insert(0, str(import_root))
+if not getattr(sys, "frozen", False):
+    for import_root in (ROOT, ROOT / "src"):
+        if str(import_root) not in sys.path:
+            sys.path.insert(0, str(import_root))
 
 import dearpygui.dearpygui as dpg
 import numpy as np
