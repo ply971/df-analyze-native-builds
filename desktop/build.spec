@@ -101,6 +101,8 @@ a = Analysis(
     noarchive=False,
     optimize=0,
 )
+print("Application GUI modules in archive:", [entry for entry in a.pure if "df_analyze.gui" in entry[0]])
+print("Application GUI source files:", [entry for entry in a.datas if "df_analyze/gui" in entry[0].replace("\\", "/")])
 pyz = PYZ(a.pure)
 
 exe = EXE(
