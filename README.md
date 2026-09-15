@@ -41,6 +41,11 @@ before testing. Installers are created only after the packaged app passes:
 - a real analysis with saved performance tables;
 - notebook execution, persistent variables, inline plotting and export.
 
+The separate **Install and test finished setup files** workflow accepts a build
+run ID. It downloads the finished artifacts onto fresh native runners, checks
+their hashes, installs them, and repeats the app checks. It also verifies the
+Linux portable archive and Windows/Linux uninstallers.
+
 See [desktop build instructions](desktop/README.md) for local builds and requirements.
 These automated checks do not certify every OS version, graphics driver or dataset.
 

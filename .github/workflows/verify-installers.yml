@@ -1,0 +1,57 @@
+name: Install and test finished setup files
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: Successful native installer build run ID
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  verify:
+    name: ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: linux-x86_64
+          - os: macos-14
+            target: macos-arm64
+          - os: windows-2022
+            target: windows-x86_64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      PYTHONUNBUFFERED: "1"
+      LIBGL_ALWAYS_SOFTWARE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13.11"
+      - uses: actions/download-artifact@v4
+        with:
+          name: df-analyze-${{ matrix.target }}
+          path: installer-artifacts
+          run-id: ${{ inputs.build_run_id }}
+          github-token: ${{ github.token }}
+      - name: Install, launch, exercise and uninstall
+        shell: bash
+        run: |
+          set -o pipefail
+          python desktop/verify_installers.py 2>&1 | tee installer-verification.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: installation-check-${{ matrix.target }}
+          path: |
+            installer-verification.log
+            installer.log
+          if-no-files-found: ignore
+          retention-days: 14
