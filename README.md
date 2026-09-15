@@ -6,6 +6,10 @@ Private build repository for the Windows, Linux and Apple Silicon desktop instal
 
 ## Downloads
 
+**Verified build:** [Windows, Linux and Mac installers](https://github.com/ply971/df-analyze-native-builds/actions/runs/34997497438).
+All three passed [independent installation checks on fresh runners](https://github.com/ply971/df-analyze-native-builds/actions/runs/34999228336)
+on September 15, 2026. See [installation instructions](INSTALL.md).
+
 Open a successful workflow run and download its installer artifacts. Each artifact
 contains an installer and its SHA-256 checksum. Actions downloads are retained for
 14 days. No release is published automatically.
@@ -40,6 +44,10 @@ before testing. Installers are created only after the packaged app passes:
 - small sklearn, CatBoost, LightGBM, Numba, PyTorch and text/image computations;
 - a real analysis with saved performance tables;
 - notebook execution, persistent variables, inline plotting and export.
+
+Before uploading the installers, the build workflow installs each setup and
+repeats those checks. It also tests the Linux portable archive and Windows/Linux
+uninstallers. Analysis runs as an ordinary user, including the `/opt` Linux install.
 
 The separate **Install and test finished setup files** workflow accepts a build
 run ID. It downloads the finished artifacts onto fresh native runners, checks
