@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import os
 import shutil
@@ -21,9 +22,12 @@ def run(args, **kwargs):
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--artifacts", type=Path, default=ROOT / "installer-artifacts")
+    args = parser.parse_args()
     if os.environ.get("GITHUB_ACTIONS") != "true" or not os.environ.get("RUNNER_TEMP"):
         raise SystemExit("Run this installation test only on a disposable GitHub Actions runner.")
-    artifacts = ROOT / "installer-artifacts"
+    artifacts = args.artifacts.resolve()
     checksums = sorted(artifacts.glob("*.sha256"))
     if not checksums:
         raise SystemExit("No installer checksum files were downloaded.")

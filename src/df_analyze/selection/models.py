@@ -8,6 +8,7 @@ from warnings import warn
 
 if TYPE_CHECKING:
     from df_analyze.cli.cli import ProgramOptions
+    from df_analyze.testing.datasets import TestDataset
 from df_analyze.preprocessing.prepare import PreparedData
 from df_analyze.selection.embedded import (
     EmbedSelected,
@@ -15,7 +16,6 @@ from df_analyze.selection.embedded import (
     embed_select_features,
 )
 from df_analyze.selection.wrapper import WrapperSelected, wrap_select_features
-from df_analyze.testing.datasets import TestDataset
 
 
 @dataclass

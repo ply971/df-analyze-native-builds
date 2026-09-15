@@ -58,6 +58,11 @@ jobs:
         run: |
           set -o pipefail
           uv run --no-project --python 3.13.11 python desktop/build_native.py 2>&1 | tee native-build.log
+      - name: Verify installation and uninstall
+        shell: bash
+        run: |
+          set -o pipefail
+          uv run --no-project --python 3.13.11 python desktop/verify_installers.py --artifacts dist/installer/native 2>&1 | tee installer-verification.log
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
@@ -73,6 +78,8 @@ jobs:
           name: diagnostics-${{ matrix.target }}
           path: |
             native-build.log
+            installer-verification.log
+            installer.log
             build/native/${{ matrix.target }}/pyinstaller/build/warn-build.txt
           if-no-files-found: ignore
           retention-days: 14

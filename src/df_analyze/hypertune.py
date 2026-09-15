@@ -59,10 +59,10 @@ from df_analyze.legacy.src.objectives import (
     svm_classifier_objective,
 )
 from df_analyze.models.dummy import DummyClassifier, DummyRegressor
-from df_analyze.testing.datasets import TestDataset
 
 if TYPE_CHECKING:
     from df_analyze.models.base import DfAnalyzeModel
+    from df_analyze.testing.datasets import TestDataset
 import jsonpickle
 
 from df_analyze.enumerables import ClassifierScorer, RegressorScorer

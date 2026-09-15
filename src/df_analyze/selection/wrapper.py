@@ -11,6 +11,7 @@ from pandas import DataFrame, Series
 
 if TYPE_CHECKING:
     from df_analyze.cli.cli import ProgramOptions
+    from df_analyze.testing.datasets import TestDataset
 from df_analyze.enumerables import (
     ClsScore,
     RegScore,
@@ -19,7 +20,6 @@ from df_analyze.enumerables import (
 )
 from df_analyze.preprocessing.prepare import PreparedData
 from df_analyze.selection.stepwise import RedundantFeatures, stepwise_select
-from df_analyze.testing.datasets import TestDataset
 
 
 @dataclass

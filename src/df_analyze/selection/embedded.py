@@ -15,11 +15,11 @@ from sklearn.feature_selection import SelectFromModel
 if TYPE_CHECKING:
     from df_analyze.cli.cli import ProgramOptions
     from df_analyze.models.base import DfAnalyzeModel
+    from df_analyze.testing.datasets import TestDataset
 from df_analyze.enumerables import EmbedSelectionModel
 from df_analyze.models.lgbm import LightGBMClassifier, LightGBMRegressor
 from df_analyze.models.linear import SGDClassifierSelector, SGDRegressorSelector
 from df_analyze.preprocessing.prepare import PreparedData
-from df_analyze.testing.datasets import TestDataset
 
 
 @dataclass
