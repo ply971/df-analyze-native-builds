@@ -63,6 +63,17 @@ RISKY_COPY_METADATA = [
 datas = []
 binaries = []
 hiddenimports = []
+# Keep the application's complete Python package tree available. Some pipeline
+# imports use the legacy src.df_analyze name, which can otherwise cause module
+# graph analysis to omit siblings needed by the GUI and bundled kernel.
+for source_root in (ROOT / "src", ROOT):
+    package = source_root / ("df_analyze" if source_root.name == "src" else "desktop")
+    for source_file in sorted(package.rglob("*.py")):
+        relative = source_file.relative_to(source_root)
+        datas.append((str(source_file), str(relative.parent)))
+        module = ".".join(relative.with_suffix("").parts)
+        hiddenimports.append(module.removesuffix(".__init__"))
+
 for pkg in RISKY_COLLECT_ALL:
     d, b, h = collect_all(pkg)
     datas += d

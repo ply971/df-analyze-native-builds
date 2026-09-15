@@ -150,7 +150,7 @@ def build_deb(bundle: Path, output: Path, version: str) -> Path:
             " Explore tabular datasets and run machine learning experiments.\n",
             encoding="utf-8",
         )
-        run(["dpkg-deb", "--root-owner-group", "-Zxz", "--build", staging, artifact])
+        run(["dpkg-deb", "--root-owner-group", "-Zgzip", "-z6", "--build", staging, artifact])
     run(["dpkg-deb", "--info", artifact])
     return artifact
 
