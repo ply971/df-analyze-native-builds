@@ -1,24 +1,27 @@
 # df-analyze Desktop installers
 
-Private build repository for the Windows, Linux and Apple Silicon desktop installers.
+Native build repository for the Windows, Linux and Apple Silicon desktop installers.
 
-[View native builds and downloads](https://github.com/ply971/df-analyze-native-builds/actions/workflows/native-installers.yml)
+[Download the latest release](https://github.com/ply971/df-analyze-native-builds/releases/latest)
 
 ## Downloads
 
-**Verified build:** [Windows, Linux and Mac installers](https://github.com/ply971/df-analyze-native-builds/actions/runs/34997497438).
+**Published release:** [df-analyze Desktop 4.1.0](https://github.com/ply971/df-analyze-native-builds/releases/tag/v4.1.0).
 All three passed [independent installation checks on fresh runners](https://github.com/ply971/df-analyze-native-builds/actions/runs/34999228336)
 on September 15, 2026. See [installation instructions](INSTALL.md).
 
-Open a successful workflow run and download its installer artifacts. Each artifact
-contains an installer and its SHA-256 checksum. Actions downloads are retained for
-14 days. No release is published automatically.
+Download your installer from the release's **Assets** section. The release also
+includes SHA-256 checksums, installation instructions, and the build report.
+Release assets are not subject to the 14-day Actions artifact retention period.
 
-| Artifact | Installer | Platform |
+| Platform | Installer | Requirements |
 | --- | --- | --- |
-| `df-analyze-windows-x86_64` | `.exe` setup wizard | 64-bit Windows |
-| `df-analyze-linux-x86_64` | `.deb` and portable `.tar.gz` | Ubuntu 22.04 or newer, x86-64 |
-| `df-analyze-macos-arm64` | `.dmg` | macOS 14 or newer, Apple Silicon |
+| Windows | [.exe setup wizard](https://github.com/ply971/df-analyze-native-builds/releases/download/v4.1.0/df-analyze-desktop-4.1.0-windows-x86_64-setup.exe) | x86-64 |
+| Linux | [.deb installer](https://github.com/ply971/df-analyze-native-builds/releases/download/v4.1.0/df-analyze-desktop-4.1.0-linux-amd64.deb) | Ubuntu 22.04 or newer, x86-64 |
+| Mac | [.dmg disk image](https://github.com/ply971/df-analyze-native-builds/releases/download/v4.1.0/df-analyze-desktop-4.1.0-macos-arm64.dmg) | macOS 14 or newer, Apple Silicon |
+
+The additional Linux portable archive is available in the build's Actions
+artifacts, which retain their separate 14-day expiry.
 
 Intel Macs and other Linux distributions require separate compatibility testing.
 

@@ -28,7 +28,8 @@ model weights require an internet connection for their initial download.
 
 ## Source and verification
 
-- [Private source repository](https://github.com/ply971/df-analyze-native-builds)
+- [Published installers](https://github.com/ply971/df-analyze-native-builds/releases/tag/v4.1.0)
+- [Source repository](https://github.com/ply971/df-analyze-native-builds)
 - [Native build and installation checks](https://github.com/ply971/df-analyze-native-builds/actions/runs/34997497438)
 - [Independent installation checks on fresh runners](https://github.com/ply971/df-analyze-native-builds/actions/runs/34999228336)
 - App source commit: `6909bb15e03f7350aa0cf84fc727ef1ed4392ae3`.
@@ -40,6 +41,6 @@ real analysis, and notebook execution, plotting, and export. It also installs
 the finished setups and checks Windows/Linux uninstallers. The Linux portable
 archive is available in the workflow's Linux artifact and has its own test.
 
-GitHub Actions downloads expire after 14 days. The local setup files are
-independent copies. These checks cover the listed targets and test cases;
+Release downloads are not subject to the 14-day Actions artifact expiry.
+The local setup files are independent copies. These checks cover the listed targets and test cases;
 they do not certify every hardware configuration or dataset.
