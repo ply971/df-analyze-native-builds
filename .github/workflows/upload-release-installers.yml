@@ -1,0 +1,68 @@
+name: Upload verified installers to a draft release
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: Successful native installer build run ID
+        required: true
+        type: string
+      release_tag:
+        description: Existing draft release tag
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      BUILD_RUN_ID: ${{ inputs.build_run_id }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
+    steps:
+      - name: Check build and release source
+        run: |
+          gh run view "$BUILD_RUN_ID" --json status,conclusion,headSha > build.json
+          gh release view "$RELEASE_TAG" --json isDraft,targetCommitish > release.json
+          python3 - <<'PY'
+          import json
+          build = json.load(open('build.json'))
+          release = json.load(open('release.json'))
+          assert build['status'] == 'completed' and build['conclusion'] == 'success', build
+          assert release['isDraft'], 'Only draft releases can receive these uploads'
+          assert release['targetCommitish'] == build['headSha'], 'Release source does not match the tested build'
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: df-analyze-*
+          path: installers
+          merge-multiple: true
+          run-id: ${{ inputs.build_run_id }}
+          github-token: ${{ github.token }}
+      - name: Verify checksums and upload installers
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import os
+          import subprocess
+          from pathlib import Path
+          packages = sorted(p for p in Path('installers').iterdir() if p.suffix in {'.exe', '.deb', '.dmg'})
+          assert len(packages) == 3, packages
+          for package in packages:
+              checksum = package.with_name(package.name + '.sha256')
+              expected, name = checksum.read_text().strip().split(maxsplit=1)
+              assert name == package.name, checksum
+              with package.open('rb') as stream:
+                  actual = hashlib.file_digest(stream, 'sha256').hexdigest()
+              assert actual == expected, f'Checksum mismatch: {package.name}'
+              print(f'Verified: {package.name}', flush=True)
+          for package in packages:
+              checksum = package.with_name(package.name + '.sha256')
+              subprocess.run(['gh', 'release', 'upload', os.environ['RELEASE_TAG'], str(package), str(checksum)], check=True)
+          PY
